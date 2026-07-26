@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1b0e0a">
+  <meta name="description" content="Yearbook Quest: Document Tracking and Fulfillment System">
+  <title>Yearbook Quest</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="game" id="game">
+    <div class="scene-cleanup" aria-hidden="true"></div>
+    <div class="hud-backdrop" aria-hidden="true"></div>
+
+    <button class="scene-brand" id="newClaimTop" type="button" aria-label="Start a new yearbook claim">
+      <span aria-hidden="true">📜</span>
+      <span>Yearbook Quest</span>
+    </button>
+
+    <div class="step-indicator" id="stepIndicator" aria-live="polite">Step: Intro</div>
+
+    
+
+    <section class="dialogue-shell" id="dialogueShell" data-size="intro" aria-label="Conversation with Yuna">
+      <div class="speaker-tab">YUNA</div>
+      <span class="corner corner-top-left" aria-hidden="true"></span>
+      <span class="corner corner-top-right" aria-hidden="true"></span>
+      <span class="corner corner-bottom-left" aria-hidden="true"></span>
+      <span class="corner corner-bottom-right" aria-hidden="true"></span>
+
+      <div class="dialogue-content" id="dialogueContent">
+        <p class="dialogue-line" id="dialogueLine" aria-live="polite"></p>
+        <div class="step-content" id="stepContent"></div>
+      </div>
+    </section>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <canvas id="captureCanvas" hidden></canvas>
+  </main>
+
+  <section class="survey-modal" id="surveyModal" hidden aria-modal="true" role="dialog" aria-labelledby="surveyModalTitle">
+    <div class="survey-modal-backdrop" data-action="close-survey-modal"></div>
+    <div class="survey-modal-panel">
+      <header class="survey-modal-header">
+        <div>
+          <span class="survey-modal-kicker">Office Survey</span>
+          <h2 id="surveyModalTitle">Complete the Alumni Office Survey</h2>
+        </div>
+        <button class="survey-modal-close" type="button" data-action="close-survey-modal" aria-label="Close office survey">×</button>
+      </header>
+      <div class="survey-modal-body">
+        <iframe
+          id="surveyFrame"
+          class="survey-frame"
+          title="Alumni Office Survey"
+          loading="lazy"
+          scrolling="yes"
+          referrerpolicy="strict-origin-when-cross-origin"
+          src="about:blank"></iframe>
+      </div>
+      <footer class="survey-modal-footer">
+        <a class="vn-button secondary small" href="https://surveymars.com/q/T4GbxhQUK?collect=3" target="_blank" rel="noopener noreferrer">Open in New Tab</a>
+        <button class="vn-button small" type="button" data-action="close-survey-modal">Return to Quest</button>
+      </footer>
+    </div>
+  </section>
+
+
+  <section class="camera-modal" id="cameraModal" hidden aria-modal="true" role="dialog" aria-labelledby="cameraModalTitle">
+    <div class="camera-modal-backdrop" aria-hidden="true"></div>
+    <div class="camera-modal-panel">
+      <header class="camera-modal-header">
+        <div>
+          <span class="camera-modal-kicker">Documentation Photo</span>
+          <h2 id="cameraModalTitle">Position the claimant and yearbook</h2>
+          <p>Use the large live preview to check the claimant’s position before starting the five-second countdown.</p>
+        </div>
+      </header>
+      <div class="camera-modal-body">
+        <div class="camera-modal-preview">
+          <video id="cameraVideo" autoplay playsinline muted></video>
+          <img id="capturedImage" alt="Captured yearbook claimant" hidden>
+          <div class="camera-placeholder" id="cameraPlaceholder"><span>Camera preview will appear here.<br>Permission is required on HTTPS or localhost.</span></div>
+          <div class="camera-status info" id="cameraStatus">Preparing camera…</div>
+          <div class="camera-countdown" id="cameraCountdown" hidden>5</div>
+        </div>
+        <p class="camera-modal-tip">Hold the yearbook clearly in front of the claimant and keep the face, upper body, and full yearbook cover inside the frame.</p>
+        <p class="field-error camera-modal-error" id="cameraError" role="alert"></p>
+        <div class="camera-modal-fallback" id="cameraFallback" hidden>
+          <strong>Camera unavailable?</strong>
+          <p>Upload an existing photo or use the manual-date fallback.</p>
+          <div class="camera-fallback-actions">
+            <label class="file-label">Upload Photo<input id="photoUpload" type="file" accept="image/*" capture="environment"></label>
+            <button class="vn-button secondary small" type="button" data-action="manual-fallback">Skip Camera</button>
+          </div>
+          <div class="camera-manual-date" id="manualDateWrap" hidden>
+            <label class="content-label" for="manualDate">Manual Date Claimed</label>
+            <input class="manual-date" id="manualDate" type="date">
+          </div>
+        </div>
+      </div>
+      <footer class="camera-modal-footer">
+        <button class="vn-button secondary" type="button" data-action="camera-back">◀ Back</button>
+        <button class="vn-button" id="captureButton" type="button" data-action="camera-capture" disabled>📷 Capture in 5 Seconds</button>
+        <button class="vn-button" id="photoContinue" type="button" data-action="camera-finalize" disabled>Finalize Claim ▶</button>
+      </footer>
+    </div>
+  </section>
+
+  <section class="resolve-modal" id="resolveModal" hidden aria-modal="true" role="dialog" aria-labelledby="resolveModalTitle">
+    <div class="resolve-modal-backdrop" data-action="cancel-resolve"></div>
+    <form class="resolve-modal-panel" id="resolveForm">
+      <div class="resolve-icon" aria-hidden="true">🔐</div>
+      <div class="resolve-copy">
+        <span class="resolve-kicker">Authorized Resolution</span>
+        <h2 id="resolveModalTitle">Enter the resolution password</h2>
+        <p>Authorized staff must enter the password before the duplicate-claim workflow can be cleared and restarted.</p>
+        <label class="content-label" for="resolvePassword">Password</label>
+        <input class="resolve-password" id="resolvePassword" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Enter password">
+        <p class="field-error resolve-error" id="resolveError" role="alert"></p>
+        <div class="resolve-actions">
+          <button class="vn-button secondary" type="button" data-action="cancel-resolve">Cancel</button>
+          <button class="vn-button" type="submit">Resolve &amp; Restart ▶</button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+
+  <section class="duplicate-claim-modal" id="duplicateClaimModal" hidden aria-modal="true" role="dialog" aria-labelledby="duplicateClaimTitle">
+    <div class="duplicate-claim-backdrop" data-action="close-duplicate-modal"></div>
+    <div class="duplicate-claim-panel">
+      <div class="duplicate-claim-icon" aria-hidden="true">⚠️</div>
+      <div class="duplicate-claim-copy">
+        <span class="duplicate-claim-kicker">Duplicate Claim Warning</span>
+        <h2 id="duplicateClaimTitle">This alumnus already claimed a yearbook.</h2>
+        <p id="duplicateClaimMessage">Multiple claimed records were found in the Google Sheets.</p>
+        <div class="duplicate-claim-batches" id="duplicateClaimBatches"></div>
+        <p class="duplicate-claim-instruction">The <strong>Finish &amp; New Claim</strong> button is disabled. Close this warning, then use <strong>Resolve</strong> and enter the authorized password to restart the requirements.</p>
+        <button class="vn-button" type="button" data-action="close-duplicate-modal">Review Claim Record</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
